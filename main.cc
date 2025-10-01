@@ -21,7 +21,6 @@ namespace phys {
   constexpr long double PHI  = 6.24e18L;         // beam (part/s)
 }
 
-// Donne (M [g/mol], rho [g/cm^3]) pour quelques matériaux usuels
 inline bool GetMatProps(const std::string& nuc, long double& M, long double& rho) {
   std::string k = nuc; for (auto& c : k) c = std::toupper(c);
   if (k=="U"  || k=="URANIUM") { M=238.0L;  rho=18.95L;  return true; }
