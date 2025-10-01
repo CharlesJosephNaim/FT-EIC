@@ -16,7 +16,6 @@
 #include <vector>
 #include <string>
 
-// Utilitaire Micromegas
 struct MicromegasSet {
   G4double rInner;
   G4double rOuter;
@@ -26,7 +25,6 @@ struct MicromegasSet {
       : rInner(rIn), rOuter(rOut), lengthZ(len), name(nm) {}
 };
 
-// Position cible
 G4ThreeVector EICDetectorConstruction::GetTargetPosition() const {
   return fTargetPosition;
 }
@@ -34,7 +32,6 @@ G4ThreeVector EICDetectorConstruction::GetTargetPosition() const {
 EICDetectorConstruction::EICDetectorConstruction() {}
 EICDetectorConstruction::~EICDetectorConstruction() {}
 
-// Matériaux
 G4Material* EICDetectorConstruction::CreateMaterial(const G4String& name) {
   return G4NistManager::Instance()->FindOrBuildMaterial(name);
 }
@@ -76,7 +73,6 @@ G4Material* EICDetectorConstruction::CreateCompositeMaterial(const G4String& nam
   return nist->FindOrBuildMaterial("G4_AIR");
 }
 
-// Monde + sous-systèmes
 G4VPhysicalVolume* EICDetectorConstruction::Construct() {
   auto* air = CreateMaterial("G4_AIR");
 
@@ -84,7 +80,6 @@ G4VPhysicalVolume* EICDetectorConstruction::Construct() {
   auto* worldLV  = new G4LogicalVolume(worldBox, air, "WorldLV");
   auto* worldPV  = new G4PVPlacement(nullptr, {}, worldLV, "World", nullptr, false, 0);
 
-  // Sous-systèmes (construits mais masqués ensuite)
   ConstructEMCal(worldLV);
   ConstructHCal(worldLV);
   ConstructSolenoid(worldLV);
@@ -92,15 +87,12 @@ G4VPhysicalVolume* EICDetectorConstruction::Construct() {
   ConstructBarrelEMCal(worldLV);
   ConstructTimeOfFlight(worldLV);
 
-  // Cible + FVTX
   ConstructTarget(worldLV);
   ConstructFVTXDetector(worldLV);
 
-  // Trackers complémentaires (optionnels)
   ConstructInnerTracker(worldLV);
   ConstructMicromegas(worldLV);
 
-  // Visu monde
   auto* worldVis = new G4VisAttributes(G4Colour(1., 1., 1., 0.05));
   worldVis->SetVisibility(true);
   worldLV->SetVisAttributes(worldVis);
@@ -108,7 +100,6 @@ G4VPhysicalVolume* EICDetectorConstruction::Construct() {
   return worldPV;
 }
 
-// CIBLE (foil mince)
 void EICDetectorConstruction::ConstructTarget(G4LogicalVolume* worldLV) {
   auto* be = CreateMaterial("G4_Be");
   const G4double foilThick  = 100.0 * um;
@@ -125,38 +116,31 @@ void EICDetectorConstruction::ConstructTarget(G4LogicalVolume* worldLV) {
   targetLV->SetVisAttributes(vis);
 }
 
-// FVTX (4 disques)
 void EICDetectorConstruction::ConstructFVTXDetector(G4LogicalVolume* worldLV) {
   auto* si  = CreateMaterial("G4_Si");
   auto* air = CreateMaterial("G4_AIR");
   auto* be  = CreateMaterial("G4_Be");
 
-  // Paramètres type PHENIX FVTX (AMBER-like)
   const G4double rInDisk  = 44.0 * mm;
-  const G4double rOutDisk = 120.0 * mm;   // ajustable
+  const G4double rOutDisk = 120.0 * mm;   
   const G4double tSi      = 0.320 * mm;
   const G4double zStep[4] = {201.1 * mm, 261.4 * mm, 321.7 * mm, 382.0 * mm};
 
-  // Enveloppe couvrant tous les disques (centrée sur la cible)
   const G4double envHalfZ = zStep[3] + 20.0 * mm;
   const G4double envROut  = rOutDisk + 10.0 * mm;
 
-  // Beampipe
   const G4double rPipeIn  = 15.0 * mm;
   const G4double tPipe    = 0.5 * mm;
   const G4double rPipeOut = rPipeIn + tPipe;
 
-  // Enveloppe
   auto* envSolid = new G4Tubs("FVTXEnvelope", 0., envROut, envHalfZ, 0., 360.*deg);
   fvtxEnvelopeLV = new G4LogicalVolume(envSolid, air, "FVTXEnvelopeLV");
   new G4PVPlacement(nullptr, fTargetPosition, fvtxEnvelopeLV, "FVTXEnvelope", worldLV, false, 0);
 
-  // Beam pipe
   auto* pipeSolid = new G4Tubs("FVTXBeamPipe", rPipeIn, rPipeOut, envHalfZ, 0., 360.*deg);
   fvtxBeamPipeLV  = new G4LogicalVolume(pipeSolid, be, "FVTXBeamPipeLV");
   new G4PVPlacement(nullptr, {}, fvtxBeamPipeLV, "FVTXBeamPipe", fvtxEnvelopeLV, false, 0);
 
-  // Disques actifs
   fvtxDisksLV.clear();
   for (int i = 0; i < 4; ++i) {
     const G4String nm = "FVTX_Disk_" + std::to_string(i + 1);
@@ -166,12 +150,11 @@ void EICDetectorConstruction::ConstructFVTXDetector(G4LogicalVolume* worldLV) {
     fvtxDisksLV.push_back(diskLV);
   }
 
-  // Visu FVTX
-  auto* envVis = new G4VisAttributes(G4Colour(0.95, 0.5, 0.5, 0.10)); // envelope très transparente
+  auto* envVis = new G4VisAttributes(G4Colour(0.95, 0.5, 0.5, 0.10)); 
   envVis->SetVisibility(true);
   fvtxEnvelopeLV->SetVisAttributes(envVis);
 
-  auto* beVis  = new G4VisAttributes(G4Colour(0.8, 0.8, 0.2, 0.5));   // beampipe visible
+  auto* beVis  = new G4VisAttributes(G4Colour(0.8, 0.8, 0.2, 0.5));   
   beVis->SetVisibility(true);
   beVis->SetForceSolid(true);
   fvtxBeamPipeLV->SetVisAttributes(beVis);
@@ -184,7 +167,6 @@ void EICDetectorConstruction::ConstructFVTXDetector(G4LogicalVolume* worldLV) {
   }
 }
 
-// EMCal / HCal / etc. (construits mais qu’on masquera)
 void EICDetectorConstruction::ConstructEMCal(G4LogicalVolume* worldLV) {
   auto* pbsc = CreateCompositeMaterial("PbSc");
   auto* emcalBox = new G4Box("EMCal", 2.5 * cm / 2, 2.5 * cm / 2, 30 * cm / 2);
@@ -258,7 +240,6 @@ void EICDetectorConstruction::ConstructBarrelEMCal(G4LogicalVolume* worldLV) {
   new G4PVPlacement(nullptr, emcalPos, emcalAluminumPlateLV, "EMCalAluminumPlate", worldLV, false, 0);
 }
 
-// Trackers (optionnels)
 void EICDetectorConstruction::ConstructMicromegas(G4LogicalVolume* worldLV) {
   std::vector<MicromegasSet> micromegasSet = {
       {48.75 * cm, 49.75 * cm, 120.0 * cm, "Micromegas1"},
@@ -308,16 +289,13 @@ void EICDetectorConstruction::ConstructInnerTracker(G4LogicalVolume* worldLV) {
   }
 }
 
-// SD + visibilité : seules cible & FVTX visibles
 void EICDetectorConstruction::ConstructSDandField() {
   auto* sdManager = G4SDManager::GetSDMpointer();
   auto* eicSD     = new EICSensitiveDetector("EICSD");
   sdManager->AddNewDetector(eicSD);
 
-  // FVTX sensible
   for (auto* lv : fvtxDisksLV) if (lv) lv->SetSensitiveDetector(eicSD);
 
-  // (Option) trackers sensibles
   for (auto* lv : innerTrackerDisksLV) if (lv) lv->SetSensitiveDetector(eicSD);
   for (auto* lv : micromegasLV)        if (lv) lv->SetSensitiveDetector(eicSD);
 
@@ -329,7 +307,7 @@ void EICDetectorConstruction::ConstructSDandField() {
   if (emcalOffsetAirLV)     emcalOffsetAirLV->SetSensitiveDetector(eicSD);
   if (emcalAluminumPlateLV) emcalAluminumPlateLV->SetSensitiveDetector(eicSD);
 
-  // Tout invisible par défaut
+  
   //auto* invisible = new G4VisAttributes();
   //invisible->SetVisibility(false);
 
