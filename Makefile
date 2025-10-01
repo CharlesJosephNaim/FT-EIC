@@ -7,7 +7,7 @@ CXXFLAGS = $(shell $(G4INSTALL)/bin/geant4-config --cflags) \
            -std=c++17 \
            -Wall -Wextra -Wpedantic -g
 
-# Ajout flags Pythia8 includes
+# Pythia8 includes
 CXXFLAGS += -I$(PYTHIA8_DIR)/include
 
 # Librairies Geant4, ROOT, Pythia8
