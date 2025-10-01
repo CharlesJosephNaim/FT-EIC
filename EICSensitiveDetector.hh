@@ -4,8 +4,8 @@
 #include "G4VSensitiveDetector.hh"
 #include "globals.hh"
 #include <map>
-#include <vector>  // si besoin ailleurs
-#include <string>  // pour std::string si tu veux, sinon G4String
+#include <vector>  
+#include <string>  
 
 class EICSensitiveDetector : public G4VSensitiveDetector {
 public:
@@ -23,7 +23,7 @@ private:
         G4double energyDep;
         G4double kineticEnergy;
 
-        // Ajout des composantes du momentum
+       
         G4double px;
         G4double py;
         G4double pz;
@@ -31,7 +31,7 @@ private:
 
     };
 
-    std::map<G4int, TrackInfo> trackInfos;  // clé = TrackID
+    std::map<G4int, TrackInfo> trackInfos;  
 
     G4double totalEnergyDeposit = 0.;
 };
